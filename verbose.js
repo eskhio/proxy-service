@@ -1,4 +1,6 @@
 const chalk = require("chalk");
+const conf = require("./conf");
+const moment = require("moment")
 const verbose = module.exports = {
 	/**
 	 * @description Classic logs
@@ -27,7 +29,7 @@ const verbose = module.exports = {
 	logDebug: require("log-with-statusbar")().configure({
 		tag: {
 			tag: true,
-			maxVerbosity: 1,
+			maxVerbosity: 2,
 			enableStatusBar: false,
 		},
 		concat: {
@@ -44,7 +46,7 @@ const verbose = module.exports = {
 	logTitle: require("log-with-statusbar")().configure({
 		tag: {
 			tag: false,
-			maxVerbosity: 2,
+			maxVerbosity: 3,
 			enableStatusBar: false,
 		},
 		concat: {
@@ -55,7 +57,7 @@ const verbose = module.exports = {
 	 * @description Special logs for titles
 	 */
 	logResult: require("log-with-statusbar")().configure({
-		time: true,
+		time: false,
 		tag: false,
 		maxVerbosity: 4,
 		concat: {
@@ -66,8 +68,9 @@ const verbose = module.exports = {
 				tag: {
 					maxVerbosity: 4,
 				},
-			})("-> " + (text));
+			})(text);
 		},
+		stringify: { maxDepth: 5, maxArrayLength: 30}
 	}),
 	/**
 	 * @description Display an update about the proxy testing status
@@ -77,15 +80,40 @@ const verbose = module.exports = {
 		spinners: (_) => verbose.log.getSpinners(),
 		frames: (_) => verbose.proxyTestingPB.spinners().arc.frames,
 		framesLength: (_) => verbose.proxyTestingPB.frames().length,
-		start: (proxys) => this.interval = setInterval((proxys) => {
+		start: (proxys, endTime) => this.interval = setInterval((proxys) => {
+			let diff = moment.duration(new moment().diff(endTime)).seconds();
 			// Inc the display
 			verbose.proxyTestingPB.i++;
 			// We create the spinner out of the frames
 			const spinner = verbose.proxyTestingPB.frames()[
-				verbose.proxyTestingPB.i % verbose.proxyTestingPB.framesLength()
+				verbose.proxyTestingPB.i % verbose.proxyTestingPB.framesLength() 
 			].toString();
-			const updateText = `Updating proxys status ${proxys.status()} ${spinner}`;
-			verbose.log.setStatusBarText(["----------", "-> " + updateText, "----------"]);
+			const updateText = `${spinner} Updating proxys status ${proxys.testStatus()} ${diff}s`;
+			verbose.log.setStatusBarText(["----------", updateText, "----------"]);
+		}, 100, proxys),
+		stop: (_) => {
+			clearInterval(this.interval);
+			verbose.log.setStatusBarText([""]);
+		},
+	},
+	/**
+	 * @description Display an update about the proxy testing status
+	 */
+	loadBalancePB: {
+		i: 0,
+		spinners: (_) => verbose.log.getSpinners(),
+		frames: (_) => verbose.loadBalancePB.spinners().arc.frames,
+		framesLength: (_) => verbose.loadBalancePB.frames().length,
+		start: (proxys, nbUrls, endTime) => this.interval = setInterval((proxys) => {
+			// Inc the display
+			verbose.loadBalancePB.i++;
+			// We create the spinner out of the frames
+			const spinner = verbose.loadBalancePB.frames()[
+				verbose.loadBalancePB.i % verbose.loadBalancePB.framesLength()
+			].toString();
+			let diff = moment.duration(new moment().diff(endTime)).seconds();
+			const updateText = `${spinner} Load balancing status ${proxys.taskStatus(nbUrls)} ${diff}s`;
+			verbose.log.setStatusBarText(["----------", updateText, "----------"]);
 		}, 100, proxys),
 		stop: (_) => {
 			clearInterval(this.interval);
@@ -95,16 +123,16 @@ const verbose = module.exports = {
 	// Colored outputs
 	printOK: (text) => chalk.bold.green(text),
 	printNOK: (text) => chalk.bold.red(text),
-	printWIP: (text) => chalk.bold.yellow(text),
+	printMEH: (text) => chalk.bold.yellow(text),
 	/**
 	 * @description Display a title
 	 * @param {String} title Display a title
 	 */
 	displayTitle(title) {
 		verbose.logTitle(
-			`${chalk.bold.yellow("-----------------------------")}`,
+			`${chalk.bold.blue("\n------------------")}`,
 			`${chalk.bold("---- "+title+" ----")}`,
-			`${chalk.bold.yellow("-----------------------------")}`,
+			`${chalk.bold.blue("------------------")}`,
 		);
 	},
 	/**

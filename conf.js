@@ -5,16 +5,18 @@ const moment = require("moment");
 module.exports = {
 	verbose: verbose,
 	moment: moment,
+	chalk: chalk,
 	/**
 	 * @description Handle non-net errors
 	 * @param {String} details The error details
 	 * @param {String} title The error title
 	 */
-	errorHandler: (details, title = "") => {
+	errorHandler: (error) => {
 		// Error
-		const messageDetails = details;
-		const messageTitle = chalk.bold(` ${(title || "")}`);
-		verbose.logError(`${messageTitle}`, "->", `${messageDetails.stack}`);
+		let messageDetails = error.stack;
+		let messageTitle = ` ${error.title}`;
+		verbose.logError(`${messageTitle}`, "->", `${messageDetails}`);
+		process.exit();
 	},
 	/**
 	 * @description Test argument to hit a debug env
