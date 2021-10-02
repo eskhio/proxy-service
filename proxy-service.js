@@ -120,13 +120,12 @@ class ProxyService {
 		try {
 			// Cheerio is used to parse proxys contained in a table (host: td[0], port: td[2], alive: td[8])
 			const $ = cheerio.load(rawProxys);
-			for (const possibleProxy of Array.from($("#proxylisttable tbody tr"))) {
+			for (const possibleProxy of Array.from($(".fpl-list table tr"))) {
 				// Current raw proxy
 				const https = $(possibleProxy).find("td:nth-child(7)").text();
 				const anonymous = $(possibleProxy).find("td:nth-child(5)").text();
-
 				// If it's an HTTPS proxy
-				if (https == "yes" && anonymous == "anonymous") {
+				if (https === "yes" && anonymous === "anonymous") {
 					const proxy = {
 						host: $(possibleProxy).find("td:first-child").text(),
 						port: $(possibleProxy).find("td:nth-child(2)").text(),
